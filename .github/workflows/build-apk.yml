@@ -77,7 +77,7 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          ./gradlew :app:assembleDebug --stacktrace --no-daemon
+          gradle :app:assembleDebug --stacktrace --no-daemon
 
       - name: Verify Debug APK
         run: |
