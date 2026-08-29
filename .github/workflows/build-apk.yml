@@ -47,10 +47,10 @@ jobs:
             exit 1
           fi
 
-      - name: Set up Gradle 9.3.1
+      - name: Set up Gradle 8.4
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.3.1'
+          gradle-version: '8.4'
 
       - name: Create temporary debug keystore
         run: |
@@ -77,7 +77,7 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          gradle :app:assembleDebug --stacktrace --no-daemon
+          ./gradlew :app:assembleDebug --stacktrace --no-daemon
 
       - name: Verify Debug APK
         run: |
@@ -115,13 +115,13 @@ jobs:
           mkdir -p "$TEMP_RELEASE_DIR"
           
           RAW_REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          SAFE_REPO_NAME=$(echo "$RAW_REPO_NAME" | tr -cs 'a-zA-Z0-9._-' '-' | sed 's/^-//;s/-$//')
+          SAFE_REPO_NAME=$(echo "\( RAW_REPO_NAME" | tr -cs 'a-zA-Z0-9._-' '-' | sed 's/^-//;s/- \)//')
           if [ -z "$SAFE_REPO_NAME" ]; then
             SAFE_REPO_NAME="android-app"
           fi
           
-          ASSET_NAME="${SAFE_REPO_NAME}-debug-build-${GITHUB_RUN_NUMBER}.apk"
-          ASSET_PATH="${TEMP_RELEASE_DIR}/${ASSET_NAME}"
+          ASSET_NAME="\( {SAFE_REPO_NAME}-debug-build- \){GITHUB_RUN_NUMBER}.apk"
+          ASSET_PATH="\( {TEMP_RELEASE_DIR}/ \){ASSET_NAME}"
           
           cp "app/build/outputs/apk/debug/app-debug.apk" "$ASSET_PATH"
           
@@ -150,7 +150,7 @@ jobs:
             exit 1
           fi
           
-          TAG_NAME="debug-apk-build-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          TAG_NAME="debug-apk-build-\( {GITHUB_RUN_NUMBER}- \){GITHUB_RUN_ATTEMPT}"
           RELEASE_TITLE="Debug APK Build #${GITHUB_RUN_NUMBER}"
           
           RELEASE_NOTES=$(cat <<EOF
@@ -177,14 +177,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG_NAME="debug-apk-build-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          TAG_NAME="debug-apk-build-\( {GITHUB_RUN_NUMBER}- \){GITHUB_RUN_ATTEMPT}"
           ASSET_NAME="${{ steps.prepare_asset.outputs.asset_name }}"
           PUBLISH_OUTCOME="${{ steps.publish_release.outcome }}"
           
           if [ "$PUBLISH_OUTCOME" = "success" ]; then
             echo "GitHub Release published successfully."
             gh release view "$TAG_NAME" || true
-            RELEASE_URL=$(gh release view "$TAG_NAME" --json url -q .url 2>/dev/null || echo "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}")
+            RELEASE_URL=$(gh release view "\( TAG_NAME" --json url -q .url 2>/dev/null || echo "https://github.com/ \){GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}")
             
             echo "Release Tag: $TAG_NAME"
             echo "Release Title: Debug APK Build #${GITHUB_RUN_NUMBER}"
